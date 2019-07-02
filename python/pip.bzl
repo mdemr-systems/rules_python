@@ -13,6 +13,19 @@
 # limitations under the License.
 """Import pip requirements into Bazel."""
 
+def _find_python(repository_ctx):
+  if "BAZEL_PYTHON" in repository_ctx.os.environ:
+      return repository_ctx.os.environ.get("BAZEL_PYTHON")
+
+  python_path = repository_ctx.which("python")
+  if not python_path:
+      python_path = repository_ctx.which("python.exe")
+  if python_path:
+      return python_path
+
+  fail("rules_python requires a python interpreter installed. " +
+       "Please set BAZEL_PYTHON, or put it on your path.")
+
 def _pip_import_impl(repository_ctx):
     """Core implementation of pip_import."""
 
@@ -24,7 +37,7 @@ def _pip_import_impl(repository_ctx):
 
     # To see the output, pass: quiet=False
     result = repository_ctx.execute([
-        "python",
+        _find_python(repository_ctx),
         repository_ctx.path(repository_ctx.attr._script),
         "--name",
         repository_ctx.attr.name,
